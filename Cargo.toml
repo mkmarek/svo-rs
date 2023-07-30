@@ -1,0 +1,39 @@
+[package]
+name = "svo-rs"
+description = "Sparse Voxel Octree (SVO) implementation for 3D navigation"
+version = "0.0.1"
+edition = "2021"
+license-file = "LICENSE"
+repository = "https://github.com/mkmarek/svo-rs"
+homepage = "https://github.com/mkmarek/svo-rs"
+readme = "README.md"
+
+[dependencies]
+bevy_render = { version = "0.11.0", optional = true }
+bevy_gizmos = { version = "0.11.0", optional = true }
+bevy_transform = { version = "0.11.0", optional = true }
+bevy_math = { version = "0.11.0", optional = true }
+
+[dev-dependencies]
+bevy = "0.11.0"
+pathfinding = "3.0.14"
+rand = "0.8.5"
+rand_distr = "0.4.3"
+criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[features]
+bevy = ["bevy_render", "bevy_gizmos", "bevy_transform", "bevy_math"]
+
+[[example]]
+name = "bevy_sphere"
+path = "examples/bevy_sphere.rs"
+required-features = ["bevy"]
+
+[[example]]
+name = "bevy_sphere_path"
+path = "examples/bevy_sphere_path.rs"
+required-features = ["bevy"]
+
+[[bench]]
+name = "pathing_around_sphere"
+harness = false
