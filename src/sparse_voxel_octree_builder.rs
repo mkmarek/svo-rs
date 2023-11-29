@@ -6,12 +6,13 @@ use crate::{
     morton_code::MortonCode,
     point::{FPoint, IPoint, UPoint},
     sparse_voxel_octree_link::SparseVoxelOctreeLink,
+    sparse_voxel_octree_node::SparseVoxelOctreeNode,
     voxelized_mesh::VoxelizedMesh,
-    SparseVoxelOctree, sparse_voxel_octree_node::SparseVoxelOctreeNode,
+    SparseVoxelOctree,
 };
 
 /// A builder for a sparse voxel octree.
-/// 
+///
 /// This builder accepts voxelized meshes and builds a sparse voxel octree from them.
 ///
 /// # Example
@@ -33,16 +34,15 @@ pub struct SparseVoxelOctreeBuilder {
 }
 
 impl SparseVoxelOctreeBuilder {
-
     /// Creates a new builder.
-    /// 
+    ///
     /// The voxel size is the size of a single voxel in world space.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::SparseVoxelOctreeBuilder;
-    /// 
+    ///
     /// let builder = SparseVoxelOctreeBuilder::new(1.0);
     /// ```
     pub fn new(voxel_size: f32) -> Self {
@@ -55,14 +55,14 @@ impl SparseVoxelOctreeBuilder {
     }
 
     /// Adds a voxelized mesh to the builder.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint};
-    /// 
+    ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
-    /// 
+    ///
     /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
     /// ```
     pub fn add_mesh(&mut self, mesh: VoxelizedMesh) {
@@ -72,16 +72,16 @@ impl SparseVoxelOctreeBuilder {
     /// Sets the minimal bounds of the octree Bounds are specified in world space.
     /// If some of the meshes are outside of the bounds, then the bounds will be expanded to include them.
     /// The final bounds of the octree will be also extended to be a power of two.
-    /// 
+    ///
     /// The bounds are specified in world space.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint, FPoint};
-    /// 
+    ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
-    /// 
+    ///
     /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
     /// builder.set_bounds(FPoint::new(-10.0, -10.0, -10.0), FPoint::new(10.0, 10.0, 10.0));
     /// ```
@@ -91,16 +91,16 @@ impl SparseVoxelOctreeBuilder {
     }
 
     /// Builds the sparse voxel octree.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint};
-    /// 
+    ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
-    /// 
+    ///
     /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
-    /// 
+    ///
     /// let octree = builder.build();
     /// ```
     pub fn build(self) -> SparseVoxelOctree {
@@ -380,8 +380,8 @@ impl SparseVoxelOctreeBuilder {
                         IPoint::ZERO
                     } else {
                         (layer[i].position.to_i32() / (next_node_size as i32 * 2))
-                        * next_node_size as i32
-                        * 2
+                            * next_node_size as i32
+                            * 2
                     }
                 };
 
@@ -505,10 +505,10 @@ mod tests {
 
         assert_eq!(layer_zero[0].position, UPoint::new(0, 0, 0));
         assert_eq!(layer_zero[0].size, 4);
-        assert_eq!(leafs[0].get(0, 0, 0), true);
-        assert_eq!(leafs[0].get(1, 1, 1), true);
-        assert_eq!(leafs[0].get(2, 2, 2), true);
-        assert_eq!(leafs[0].get(3, 3, 3), true);
+        assert!(leafs[0].get(0, 0, 0));
+        assert!(leafs[0].get(1, 1, 1));
+        assert!(leafs[0].get(2, 2, 2));
+        assert!(leafs[0].get(3, 3, 3));
 
         assert_eq!(layer_zero[1].position, UPoint::new(4, 0, 0));
         assert_eq!(layer_zero[1].size, 4);
@@ -536,10 +536,10 @@ mod tests {
 
         assert_eq!(layer_zero[7].position, UPoint::new(4, 4, 4));
         assert_eq!(layer_zero[7].size, 4);
-        assert_eq!(leafs[7].get(0, 0, 0), true);
-        assert_eq!(leafs[7].get(1, 1, 1), true);
-        assert_eq!(leafs[7].get(2, 2, 2), true);
-        assert_eq!(leafs[7].get(3, 3, 3), false);
+        assert!(leafs[7].get(0, 0, 0));
+        assert!(leafs[7].get(1, 1, 1));
+        assert!(leafs[7].get(2, 2, 2));
+        assert!(!leafs[7].get(3, 3, 3));
     }
 
     #[test]

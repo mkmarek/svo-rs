@@ -14,7 +14,7 @@ pub struct MortonCode(u64);
 
 impl PartialOrd for MortonCode {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0.partial_cmp(&other.0)
+        Some(self.cmp(other))
     }
 }
 
@@ -132,7 +132,6 @@ const MORTON_256_Z: [u64; 256] = [
 ];
 
 impl MortonCode {
-
     /// Converts u8 into a morton code wrapper struct
     #[inline]
     pub fn from_u8(x: u8) -> Self {
@@ -195,7 +194,7 @@ impl MortonCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_morton_code() {
         for x in 0..256 {
@@ -212,3 +211,4 @@ mod tests {
         }
     }
 }
+

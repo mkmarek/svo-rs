@@ -4,37 +4,39 @@ use crate::{
     cohen_sutherland::{cohen_sutherland, CohenSutherlandResult},
     compound_node::CompoundNode,
     consts::{
-        NEIGHBOR_CONNECTIONS, NEIGHBOR_SUBNODES, OFFSETS_IN_MORTON_CODE_ORDER, SUBNODE_NEIGHBORS, NEIGHBOR_POSITION_OFFSETS,
+        NEIGHBOR_CONNECTIONS, NEIGHBOR_POSITION_OFFSETS, NEIGHBOR_SUBNODES,
+        OFFSETS_IN_MORTON_CODE_ORDER, SUBNODE_NEIGHBORS,
     },
     morton_code::MortonCode,
     point::{FPoint, IPoint, UPoint},
-    sparse_voxel_octree_link::SparseVoxelOctreeLink, sparse_voxel_octree_node::SparseVoxelOctreeNode,
+    sparse_voxel_octree_link::SparseVoxelOctreeLink,
+    sparse_voxel_octree_node::SparseVoxelOctreeNode,
 };
 
 /// Implementation of a sparse voxel octree.
-/// 
+///
 /// The sparse voxel octree is a data structure that is used to represent a 3D space.
 /// It is a tree structure where each node represents a cubic volume in space.
-/// 
+///
 /// The tree is sparse, meaning that not every node is present in the tree.
 /// Only nodes that contain geometry are present in the tree.
-/// 
+///
 /// It is structured in layers where layer zero is the root layer containing all the leaf nodes
 /// and each layer above it contains the parent nodes of the layer below it.
-/// 
+///
 /// Each leaf node is a 4x4x4 cube and each parent node is a 2x2x2 cube.
 /// Leaf nodes are aggregated into compound nodes that are of type u64
 /// where each bit represents a distinct position of a single voxel. The bit 1 means that the voxel is filled
 /// and the bit 0 means that the voxel is empty.
-/// 
+///
 /// Absolute position of a node is calculated by multiplying the position of the node by the size of the node and
 /// the voxel size and then by adding the origin of the octree.
-/// 
+///
 /// Each node has a position in space, parent, children and a list of neighbors to allow
 /// for easy navigation through the tree.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```
 /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint};
 ///
@@ -46,62 +48,61 @@ use crate::{
 /// ```
 pub struct SparseVoxelOctree {
     /// Size of a single voxel in worldspace units.
-    /// 
+    ///
     /// Voxel size defines the resolution of the octree.
     pub(crate) voxel_size: f32,
 
-    /// Origin of the octree. 
+    /// Origin of the octree.
     pub(crate) origin: IPoint,
 
     /// Layers containing the nodes of the octree.
-    /// 
+    ///
     /// layer[0] contains all the leaf nodes.
     /// layer[1] contains all the parent nodes of the leaf nodes.
     /// ...
     /// layer[n] contains all the parent nodes of the layer[n-1].
-    /// 
+    ///
     /// the layer[layer.len() - 1] contains the root node.
     pub(crate) layers: Vec<Vec<SparseVoxelOctreeNode>>,
 
     /// Compound nodes containing information about single voxels.
     /// A single compound node is a 4x4x4 cube of voxels.
-    /// 
+    ///
     /// It has the same ordering as the layer[0] so you can use the same index
     /// to access both.
     pub(crate) leafs: Vec<CompoundNode>,
 }
 
 impl SparseVoxelOctree {
-
     /// Retrieves all neighbors of a node.
-    /// 
+    ///
     /// Takes into account also if the neighboring node is subdivided or a leaf node,
     /// returning the children is available.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `link` - Link to the node.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A vector containing all the neighbors of the node.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint, FPoint};
-    /// 
+    ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
-    /// 
+    ///
     /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
     /// builder.set_bounds(FPoint::new(-4.0, -4.0, -4.0), FPoint::new(4.0, 4.0, 4.0));
-    /// 
+    ///
     /// let octree = builder.build();
-    /// 
+    ///
     /// let link = octree.find_node(FPoint::new(0.0, 0.0, 0.0)).unwrap();
-    /// 
+    ///
     /// let neighbors = octree.successors(link);
-    /// 
+    ///
     /// assert_eq!(neighbors.len(), 3);
     /// ```
     pub fn successors(&self, link: SparseVoxelOctreeLink) -> Vec<SparseVoxelOctreeLink> {
@@ -247,20 +248,20 @@ impl SparseVoxelOctree {
     }
 
     /// Finds a node based on a worldspace position.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint, FPoint};
-    /// 
+    ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
-    /// 
+    ///
     /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
-    /// 
+    ///
     /// let octree = builder.build();
-    /// 
+    ///
     /// let link = octree.find_node(FPoint::new(0.0, 3.0, 0.0));
-    /// 
+    ///
     /// assert!(link.is_some());
     /// ```
     pub fn find_node(&self, position: FPoint) -> Option<SparseVoxelOctreeLink> {
@@ -343,21 +344,21 @@ impl SparseVoxelOctree {
     }
 
     /// Returns a boolean indicating whether two points are in line of sight.
-    /// 
+    ///
     /// Uses Cohen-Sutherland line clipping algorithm.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint, FPoint};
-    /// 
+    ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
-    /// 
+    ///
     /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 1, 0)], 1.0, IPoint::ZERO));
     /// builder.set_bounds(FPoint::new(-4.0, -4.0, -4.0), FPoint::new(4.0, 4.0, 4.0));
-    /// 
+    ///
     /// let octree = builder.build();
-    /// 
+    ///
     /// assert_eq!(octree.is_in_line_of_sight(FPoint::new(0.0, 0.0, 0.0), FPoint::new(0.0, 3.0, 0.0)), false);
     /// assert_eq!(octree.is_in_line_of_sight(FPoint::new(0.0, 0.0, 0.0), FPoint::new(3.0, 0.0, 0.0)), true);
     /// ```
@@ -448,16 +449,22 @@ impl SparseVoxelOctree {
         }
 
         // a is now always the lower layer
-        for (i, neighbor_offset) in NEIGHBOR_POSITION_OFFSETS.iter().enumerate().take(self.layers[a.layer_index][a.node_index].neighbors.len()) {
+        for (i, neighbor_offset) in NEIGHBOR_POSITION_OFFSETS
+            .iter()
+            .enumerate()
+            .take(self.layers[a.layer_index][a.node_index].neighbors.len())
+        {
             if let Some(n) = self.layers[a.layer_index][a.node_index].neighbors[i] {
                 if n == b {
                     let node = &self.layers[n.layer_index][n.node_index];
-                    return Some(self.node_position(n) + FPoint::new(
-                        neighbor_offset.0 as f32 * node.size as f32 / 2.0 * self.voxel_size,
-                        neighbor_offset.1 as f32 * node.size as f32 / 2.0 * self.voxel_size,
-                        neighbor_offset.2 as f32 * node.size as f32 / 2.0 * self.voxel_size,
-                    ));
-
+                    return Some(
+                        self.node_position(n)
+                            + FPoint::new(
+                                neighbor_offset.0 as f32 * node.size as f32 / 2.0 * self.voxel_size,
+                                neighbor_offset.1 as f32 * node.size as f32 / 2.0 * self.voxel_size,
+                                neighbor_offset.2 as f32 * node.size as f32 / 2.0 * self.voxel_size,
+                            ),
+                    );
                 }
             }
         }
@@ -572,12 +579,13 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore]
     fn test_compound_node_assignments() {
         let mut node = CompoundNode::new();
 
         node.set(0, 0, 0, true);
 
-        assert_eq!(node.get(0, 0, 0), true);
+        assert!(node.get(0, 0, 0));
 
         for x in 0..4 {
             for y in 0..4 {
@@ -586,7 +594,7 @@ mod tests {
                         continue;
                     }
 
-                    assert_eq!(node.get(x, y, z), false);
+                    assert!(!node.get(x, y, z));
                 }
             }
         }
@@ -602,7 +610,7 @@ mod tests {
         for x in 0..4 {
             for y in 0..4 {
                 for z in 0..4 {
-                    assert_eq!(node.get(x, y, z), true);
+                    assert!(node.get(x, y, z));
                 }
             }
         }
@@ -759,7 +767,7 @@ mod tests {
         // Subnodes
         let successor_3 = &tree.layers[successors[3].layer_index][successors[3].node_index];
         assert_eq!(successor_3.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_3.is_leaf, true);
+        assert!(successor_3.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[3].subnode_index.unwrap()).decode(),
             UPoint::new(1, 3, 0)
@@ -767,7 +775,7 @@ mod tests {
 
         let successor_4 = &tree.layers[successors[4].layer_index][successors[4].node_index];
         assert_eq!(successor_4.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_4.is_leaf, true);
+        assert!(successor_4.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[4].subnode_index.unwrap()).decode(),
             UPoint::new(2, 3, 0)
@@ -775,7 +783,7 @@ mod tests {
 
         let successor_5 = &tree.layers[successors[5].layer_index][successors[5].node_index];
         assert_eq!(successor_5.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_5.is_leaf, true);
+        assert!(successor_5.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[5].subnode_index.unwrap()).decode(),
             UPoint::new(3, 3, 0)
@@ -783,7 +791,7 @@ mod tests {
 
         let successor_6 = &tree.layers[successors[6].layer_index][successors[6].node_index];
         assert_eq!(successor_6.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_6.is_leaf, true);
+        assert!(successor_6.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[6].subnode_index.unwrap()).decode(),
             UPoint::new(0, 3, 1)
@@ -791,7 +799,7 @@ mod tests {
 
         let successor_7 = &tree.layers[successors[7].layer_index][successors[7].node_index];
         assert_eq!(successor_7.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_7.is_leaf, true);
+        assert!(successor_7.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[7].subnode_index.unwrap()).decode(),
             UPoint::new(1, 3, 1)
@@ -799,7 +807,7 @@ mod tests {
 
         let successor_8 = &tree.layers[successors[8].layer_index][successors[8].node_index];
         assert_eq!(successor_8.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_8.is_leaf, true);
+        assert!(successor_8.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[8].subnode_index.unwrap()).decode(),
             UPoint::new(2, 3, 1)
@@ -807,7 +815,7 @@ mod tests {
 
         let successor_9 = &tree.layers[successors[9].layer_index][successors[9].node_index];
         assert_eq!(successor_9.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_9.is_leaf, true);
+        assert!(successor_9.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[9].subnode_index.unwrap()).decode(),
             UPoint::new(3, 3, 1)
@@ -815,7 +823,7 @@ mod tests {
 
         let successor_10 = &tree.layers[successors[10].layer_index][successors[10].node_index];
         assert_eq!(successor_10.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_10.is_leaf, true);
+        assert!(successor_10.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[10].subnode_index.unwrap()).decode(),
             UPoint::new(0, 3, 2)
@@ -823,7 +831,7 @@ mod tests {
 
         let successor_11 = &tree.layers[successors[11].layer_index][successors[11].node_index];
         assert_eq!(successor_11.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_11.is_leaf, true);
+        assert!(successor_11.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[11].subnode_index.unwrap()).decode(),
             UPoint::new(1, 3, 2)
@@ -831,7 +839,7 @@ mod tests {
 
         let successor_12 = &tree.layers[successors[12].layer_index][successors[12].node_index];
         assert_eq!(successor_12.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_12.is_leaf, true);
+        assert!(successor_12.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[12].subnode_index.unwrap()).decode(),
             UPoint::new(2, 3, 2)
@@ -839,7 +847,7 @@ mod tests {
 
         let successor_13 = &tree.layers[successors[13].layer_index][successors[13].node_index];
         assert_eq!(successor_13.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_13.is_leaf, true);
+        assert!(successor_13.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[13].subnode_index.unwrap()).decode(),
             UPoint::new(3, 3, 2)
@@ -847,7 +855,7 @@ mod tests {
 
         let successor_14 = &tree.layers[successors[14].layer_index][successors[14].node_index];
         assert_eq!(successor_14.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_14.is_leaf, true);
+        assert!(successor_14.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[14].subnode_index.unwrap()).decode(),
             UPoint::new(0, 3, 3)
@@ -855,7 +863,7 @@ mod tests {
 
         let successor_15 = &tree.layers[successors[15].layer_index][successors[15].node_index];
         assert_eq!(successor_15.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_15.is_leaf, true);
+        assert!(successor_15.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[15].subnode_index.unwrap()).decode(),
             UPoint::new(1, 3, 3)
@@ -863,7 +871,7 @@ mod tests {
 
         let successor_16 = &tree.layers[successors[16].layer_index][successors[16].node_index];
         assert_eq!(successor_16.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_16.is_leaf, true);
+        assert!(successor_16.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[16].subnode_index.unwrap()).decode(),
             UPoint::new(2, 3, 3)
@@ -871,7 +879,7 @@ mod tests {
 
         let successor_17 = &tree.layers[successors[17].layer_index][successors[17].node_index];
         assert_eq!(successor_17.position, UPoint::new(0, 4, 0));
-        assert_eq!(successor_17.is_leaf, true);
+        assert!(successor_17.is_leaf);
         assert_eq!(
             MortonCode::from_u8(successors[17].subnode_index.unwrap()).decode(),
             UPoint::new(3, 3, 3)

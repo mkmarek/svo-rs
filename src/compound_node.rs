@@ -3,13 +3,12 @@ use std::ops::Deref;
 use crate::morton_code::MortonCode;
 
 /// Represents data in a leaf node as a 4x4x4 cube.
-/// 
+///
 /// Encodes 64 booleans in a single u64. Each of them represents is a voxel at a specific position is filed.
 /// Positions are encoded using Morton code, where the resulting index is the index of the bit in the u64.
 pub struct CompoundNode(u64);
 
 impl CompoundNode {
-
     /// Top face indexes in a 4x4x4 cube encoded into a u64.
     const TOP_FACE_POSITIONS: u64 = 0b1100110011001100000000000000000011001100110011;
 
@@ -78,8 +77,9 @@ impl CompoundNode {
     }
 
     /// Gets voxel at a specific position (`x`, `y`, `z`)
-    /// 
+    ///
     /// Returns true if the voxel is filled, false if it is empty.
+    #[allow(dead_code)]
     #[inline]
     pub fn get(&self, x: u32, y: u32, z: u32) -> bool {
         let index = MortonCode::encode_xyz(x, y, z).as_usize();
@@ -88,7 +88,7 @@ impl CompoundNode {
     }
 
     /// Gets voxel at a specific Morton code index `index`
-    /// 
+    ///
     /// Returns true if the voxel is filled, false if it is empty.
     #[inline]
     pub fn get_by_index(&self, index: u8) -> bool {

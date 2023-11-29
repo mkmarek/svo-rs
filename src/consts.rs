@@ -181,7 +181,7 @@ pub const SIBLING_CONNECTIONS: [(usize, usize, usize, usize); 12] = [
 ];
 
 /// Lookup table containing the 6 neighbors of each subnode.
-/// 
+///
 /// The array is indexed in Morton order.
 /// The values in the neighbors array indexes of the
 /// neighboring subnodes in Morton order.
@@ -252,11 +252,10 @@ pub const SUBNODE_NEIGHBORS: [[u8; 6]; 64] = [
     [54, 27, 62, 59, 45, 61],
 ];
 
-
 /// Position offsets of the 6 neighbors of a node.
-/// 
+///
 /// The indexes are:
-/// 
+///
 /// 0 = Right side
 /// 1 = Back side
 /// 2 = Left side
@@ -282,7 +281,7 @@ mod tests {
 
     #[test]
     fn test_offsets_in_morton_code_order() {
-        for i in 0..6 {
+        (0..6).for_each(|i| {
             let offset_from_table = OFFSETS_IN_MORTON_CODE_ORDER[i];
             let offset_from_morton_code = MortonCode::from_u8(i as u8).decode().to_i32();
             let offset_from_morton_code = (
@@ -292,7 +291,7 @@ mod tests {
             );
 
             assert_eq!(offset_from_table, offset_from_morton_code);
-        }
+        });
     }
 
     #[test]
@@ -515,7 +514,10 @@ mod tests {
                         let ny = y as i32 + subnode.1;
                         let nz = z as i32 + subnode.2;
 
-                        if nx < 0 || nx > 1 || ny < 0 || ny > 1 || nz < 0 || nz > 1 {
+                        if !(0..=1).contains(&nx)
+                            || !(0..=1).contains(&ny)
+                            || !(0..=1).contains(&nz)
+                        {
                             continue;
                         }
 
@@ -573,8 +575,8 @@ mod tests {
                         let ny = (y as i32 + neighbor.1 + 4) % 4;
                         let nz = (z as i32 + neighbor.2 + 4) % 4;
 
-                        let neighbor = MortonCode::encode_xyz(nx as u32, ny as u32, nz as u32)
-                            .as_u8();
+                        let neighbor =
+                            MortonCode::encode_xyz(nx as u32, ny as u32, nz as u32).as_u8();
 
                         arr[i] = neighbor;
                     }

@@ -20,10 +20,7 @@ impl Eq for SparseVoxelOctreeNode {}
 
 impl PartialOrd for SparseVoxelOctreeNode {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let self_morton = MortonCode::encode(self.position);
-        let other_morton = MortonCode::encode(other.position);
-
-        self_morton.partial_cmp(&other_morton)
+        Some(self.cmp(other))
     }
 }
 

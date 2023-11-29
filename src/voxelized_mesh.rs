@@ -11,19 +11,19 @@ pub struct VoxelizedMesh {
 
 impl VoxelizedMesh {
     /// Creates a new voxelized mesh
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::{VoxelizedMesh, UPoint, IPoint};
-    /// 
+    ///
     /// let voxels = vec![
     ///  UPoint::new(0, 0, 0),
     ///  UPoint::new(1, 0, 0),
     ///  UPoint::new(0, 1, 0),
     ///  UPoint::new(0, 0, 1),
     /// ];
-    /// 
+    ///
     /// let voxelized_mesh = VoxelizedMesh::new(voxels, 1.0, IPoint::new(0, 0, 0));
     /// ```
     pub fn new(voxels: Vec<UPoint>, voxel_size: f32, left_top_corner: IPoint) -> Self {
@@ -34,13 +34,18 @@ impl VoxelizedMesh {
         }
     }
 
+    /// Returns the voxel size of each voxel in the mesh
+    pub fn voxel_size(&self) -> f32 {
+        self.voxel_size
+    }
+
     /// Create a sphere voxelized mesh
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use svo_rs::{VoxelizedMesh, IPoint};
-    /// 
+    ///
     /// let voxelized_mesh = VoxelizedMesh::sphere(1.0, 1.0, IPoint::new(0, 0, 0));
     /// ```
     pub fn sphere(radius: f32, voxel_size: f32, position: IPoint) -> Self {
@@ -76,14 +81,14 @@ impl VoxelizedMesh {
     }
 
     /// Converts a bevy mesh to a voxelized mesh
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use bevy::prelude::*;
     /// use bevy_render::prelude::shape::UVSphere;
     /// use svo_rs::{VoxelizedMesh, IPoint};
-    /// 
+    ///
     /// let sphere = Mesh::from(UVSphere::default());
     /// let mesh = VoxelizedMesh::from_mesh(&sphere, Transform::IDENTITY.compute_matrix(), 1.0)
     ///     .expect("Failed to voxelize mesh");
@@ -125,11 +130,10 @@ impl VoxelizedMesh {
             result
         };
 
-        let triangle_min = triangles
-            .iter()
-            .fold(bevy_math::Vec3::new(f32::MAX, f32::MAX, f32::MAX), |min, v| {
-                min.min(v[0]).min(v[1]).min(v[2])
-            });
+        let triangle_min = triangles.iter().fold(
+            bevy_math::Vec3::new(f32::MAX, f32::MAX, f32::MAX),
+            |min, v| min.min(v[0]).min(v[1]).min(v[2]),
+        );
 
         let mut voxels = std::collections::HashSet::new();
 
@@ -158,7 +162,8 @@ impl VoxelizedMesh {
     #[cfg(feature = "bevy")]
     pub fn draw_gizmos(&self, gizmos: &mut bevy_gizmos::prelude::Gizmos) {
         for voxel in &self.voxels {
-            let voxel = bevy_math::Vec3::new(voxel.x as f32, voxel.y as f32, voxel.z as f32) * self.voxel_size;
+            let voxel = bevy_math::Vec3::new(voxel.x as f32, voxel.y as f32, voxel.z as f32)
+                * self.voxel_size;
             let left_top_corner = bevy_math::Vec3::new(
                 self.left_top_corner.x as f32,
                 self.left_top_corner.y as f32,
@@ -168,8 +173,10 @@ impl VoxelizedMesh {
             let half_size = bevy_math::Vec3::ONE * self.voxel_size / 2.0;
 
             gizmos.cuboid(
-                bevy_transform::prelude::Transform::from_translation(left_top_corner + voxel + half_size)
-                    .with_scale(bevy_math::Vec3::ONE * self.voxel_size),
+                bevy_transform::prelude::Transform::from_translation(
+                    left_top_corner + voxel + half_size,
+                )
+                .with_scale(bevy_math::Vec3::ONE * self.voxel_size),
                 bevy_render::prelude::Color::RED,
             )
         }
@@ -196,7 +203,11 @@ impl std::fmt::Display for VoxelizeError {
 }
 
 #[cfg(feature = "bevy")]
-fn triangle_to_voxels(triangle: &[bevy_math::Vec3; 3], voxel_size: f32, left_top_corner: IPoint) -> Vec<UPoint> {
+fn triangle_to_voxels(
+    triangle: &[bevy_math::Vec3; 3],
+    voxel_size: f32,
+    left_top_corner: IPoint,
+) -> Vec<UPoint> {
     let mut result = Vec::new();
     let left_top_corner = bevy_math::Vec3::new(
         left_top_corner.x as f32,
@@ -205,19 +216,15 @@ fn triangle_to_voxels(triangle: &[bevy_math::Vec3; 3], voxel_size: f32, left_top
     ) * voxel_size
         + (bevy_math::Vec3::ONE * voxel_size / 2.0);
 
-    let min = triangle
-        .iter()
-        .fold(bevy_math::Vec3::new(f32::MAX, f32::MAX, f32::MAX), |min, v| {
-            bevy_math::Vec3::new(min.x.min(v.x), min.y.min(v.y), min.z.min(v.z))
-        })
-        - left_top_corner;
+    let min = triangle.iter().fold(
+        bevy_math::Vec3::new(f32::MAX, f32::MAX, f32::MAX),
+        |min, v| bevy_math::Vec3::new(min.x.min(v.x), min.y.min(v.y), min.z.min(v.z)),
+    ) - left_top_corner;
 
-    let max = triangle
-        .iter()
-        .fold(bevy_math::Vec3::new(f32::MIN, f32::MIN, f32::MIN), |max, v| {
-            bevy_math::Vec3::new(max.x.max(v.x), max.y.max(v.y), max.z.max(v.z))
-        })
-        - left_top_corner;
+    let max = triangle.iter().fold(
+        bevy_math::Vec3::new(f32::MIN, f32::MIN, f32::MIN),
+        |max, v| bevy_math::Vec3::new(max.x.max(v.x), max.y.max(v.y), max.z.max(v.z)),
+    ) - left_top_corner;
 
     let min = (min / voxel_size).floor();
     let max = (max / voxel_size).ceil();
@@ -225,7 +232,8 @@ fn triangle_to_voxels(triangle: &[bevy_math::Vec3; 3], voxel_size: f32, left_top
     for x in (min.x as u32)..=(max.x as u32) {
         for y in (min.y as u32)..=(max.y as u32) {
             for z in (min.z as u32)..=(max.z as u32) {
-                let cube = bevy_math::Vec3::new(x as f32, y as f32, z as f32) * voxel_size + left_top_corner;
+                let cube = bevy_math::Vec3::new(x as f32, y as f32, z as f32) * voxel_size
+                    + left_top_corner;
 
                 if cube_triangle_intersection(cube, voxel_size / 2.0, triangle) {
                     result.push(UPoint::new(x, y, z));
@@ -239,7 +247,11 @@ fn triangle_to_voxels(triangle: &[bevy_math::Vec3; 3], voxel_size: f32, left_top
 
 #[cfg(feature = "bevy")]
 // Algorithm obtained from https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/aabb-triangle.html
-fn cube_triangle_intersection(cube: bevy_math::Vec3, cube_size: f32, triangle: &[bevy_math::Vec3; 3]) -> bool {
+fn cube_triangle_intersection(
+    cube: bevy_math::Vec3,
+    cube_size: f32,
+    triangle: &[bevy_math::Vec3; 3],
+) -> bool {
     // Get the triangle points as vectors
     let mut v0 = triangle[0];
     let mut v1 = triangle[1];
@@ -362,7 +374,7 @@ fn cube_triangle_intersection(cube: bevy_math::Vec3, cube_size: f32, triangle: &
 }
 
 #[cfg(feature = "bevy")]
-#[allow(clippy::too_many_arguments)] 
+#[allow(clippy::too_many_arguments)]
 fn sat_test(
     v0: bevy_math::Vec3,
     v1: bevy_math::Vec3,
@@ -389,7 +401,7 @@ fn sat_test(
     // Now do the actual test, basically see if either of
     // the most extreme of the triangle points intersects r
     // You might need to write Min & Max functions that take 3 arguments
-    if p0.min(p1).min( p2).max(-(p0.max(p1).max(p2))) > r {
+    if p0.min(p1).min(p2).max(-(p0.max(p1).max(p2))) > r {
         // This means BOTH of the points of the projected triangle
         // are outside the projected half-length of the AABB
         // Therefore the axis is seperating and we can exit
@@ -398,3 +410,4 @@ fn sat_test(
 
     true
 }
+

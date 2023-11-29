@@ -50,7 +50,7 @@ fn compute_path_octree(tree: &SparseVoxelOctree, area_haf_size: f32) {
                 .map(|s| (s, 1))
                 .collect::<Vec<_>>()
         },
-        |n| n.manhattan_distance(&end, &tree),
+        |n| n.manhattan_distance(&end, tree),
         |n| *n == end,
     );
 
