@@ -13,15 +13,15 @@ Example using the [pathfinding crate](https://crates.io/crates/pathfinding).
 
 ```rust
 let mut builder = svo_rs::SparseVoxelOctreeBuilder::new(voxel_size);
-builder.add_mesh(VoxelizedMesh::sphere(1.0, voxel_size, IPoint::ZERO));
+builder.add_mesh(VoxelizedMesh::sphere(1.0, voxel_size, IVec3::ZERO));
 
 let tree = builder.build()
 
 let start = tree
-    .find_node(FPoint::new(...))
+    .find_node(Vec3::new(...))
     .unwrap();
 let end = tree
-    .find_node(FPoint::new(...))
+    .find_node(Vec3::new(...))
     .unwrap();
 
 let solution = pathfinding::prelude::astar(

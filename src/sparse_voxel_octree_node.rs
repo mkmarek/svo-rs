@@ -1,8 +1,10 @@
-use crate::{morton_code::MortonCode, sparse_voxel_octree_link::SparseVoxelOctreeLink, UPoint};
+use bevy_math::UVec3;
+
+use crate::{morton_code::MortonCode, sparse_voxel_octree_link::SparseVoxelOctreeLink};
 
 #[derive(Debug)]
 pub struct SparseVoxelOctreeNode {
-    pub(crate) position: UPoint,
+    pub(crate) position: UVec3,
     pub(crate) size: u32,
     pub(crate) parent: Option<SparseVoxelOctreeLink>,
     pub(crate) first_child: Option<SparseVoxelOctreeLink>,
@@ -34,7 +36,7 @@ impl Ord for SparseVoxelOctreeNode {
 }
 
 impl SparseVoxelOctreeNode {
-    pub fn node(position: UPoint, size: u32) -> Self {
+    pub fn node(position: UVec3, size: u32) -> Self {
         Self {
             position,
             parent: None,
@@ -45,7 +47,7 @@ impl SparseVoxelOctreeNode {
         }
     }
 
-    pub fn leaf(position: UPoint) -> Self {
+    pub fn leaf(position: UVec3) -> Self {
         Self {
             position,
             parent: None,

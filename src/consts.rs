@@ -1,5 +1,5 @@
 /// Table for quick lookup of position offsets for Morton codes from 0 to 7.
-pub const OFFSETS_IN_MORTON_CODE_ORDER: [(i32, i32, i32); 8] = [
+pub const OFFSETS_IN_MORTON_CODE_ORDER: [(u8, u8, u8); 8] = [
     (0, 0, 0),
     (1, 0, 0),
     (0, 1, 0),
@@ -281,13 +281,13 @@ mod tests {
 
     #[test]
     fn test_offsets_in_morton_code_order() {
-        (0..6).for_each(|i| {
-            let offset_from_table = OFFSETS_IN_MORTON_CODE_ORDER[i];
-            let offset_from_morton_code = MortonCode::from_u8(i as u8).decode().to_i32();
+        (0_u8..6_u8).for_each(|i| {
+            let offset_from_table = OFFSETS_IN_MORTON_CODE_ORDER[i as usize];
+            let offset_from_morton_code = MortonCode::from_u8(i).decode().unwrap();
             let offset_from_morton_code = (
-                offset_from_morton_code.x,
-                offset_from_morton_code.y,
-                offset_from_morton_code.z,
+                offset_from_morton_code.x.try_into().unwrap(),
+                offset_from_morton_code.y.try_into().unwrap(),
+                offset_from_morton_code.z.try_into().unwrap(),
             );
 
             assert_eq!(offset_from_table, offset_from_morton_code);
@@ -303,10 +303,10 @@ mod tests {
 
             for y in 0..2 {
                 for z in 0..2 {
-                    let from_node = MortonCode::encode_xyz(1, y, z).as_u8();
-                    let to_node = MortonCode::encode_xyz(0, y, z).as_u8();
-                    from_nodes.push(from_node as usize);
-                    to_nodes.push(to_node as usize);
+                    let from_node = MortonCode::encode_xyz(1, y, z).as_usize().unwrap();
+                    let to_node = MortonCode::encode_xyz(0, y, z).as_usize().unwrap();
+                    from_nodes.push(from_node);
+                    to_nodes.push(to_node);
                 }
             }
 
@@ -321,10 +321,10 @@ mod tests {
 
             for x in 0..2 {
                 for y in 0..2 {
-                    let from_node = MortonCode::encode_xyz(x, y, 1).as_u8();
-                    let to_node = MortonCode::encode_xyz(x, y, 0).as_u8();
-                    from_nodes.push(from_node as usize);
-                    to_nodes.push(to_node as usize);
+                    let from_node = MortonCode::encode_xyz(x, y, 1).as_usize().unwrap();
+                    let to_node = MortonCode::encode_xyz(x, y, 0).as_usize().unwrap();
+                    from_nodes.push(from_node);
+                    to_nodes.push(to_node);
                 }
             }
 
@@ -339,10 +339,10 @@ mod tests {
 
             for y in 0..2 {
                 for z in 0..2 {
-                    let from_node = MortonCode::encode_xyz(0, y, z).as_u8();
-                    let to_node = MortonCode::encode_xyz(1, y, z).as_u8();
-                    from_nodes.push(from_node as usize);
-                    to_nodes.push(to_node as usize);
+                    let from_node = MortonCode::encode_xyz(0, y, z).as_usize().unwrap();
+                    let to_node = MortonCode::encode_xyz(1, y, z).as_usize().unwrap();
+                    from_nodes.push(from_node);
+                    to_nodes.push(to_node);
                 }
             }
 
@@ -357,10 +357,10 @@ mod tests {
 
             for x in 0..2 {
                 for y in 0..2 {
-                    let from_node = MortonCode::encode_xyz(x, y, 0).as_u8();
-                    let to_node = MortonCode::encode_xyz(x, y, 1).as_u8();
-                    from_nodes.push(from_node as usize);
-                    to_nodes.push(to_node as usize);
+                    let from_node = MortonCode::encode_xyz(x, y, 0).as_usize().unwrap();
+                    let to_node = MortonCode::encode_xyz(x, y, 1).as_usize().unwrap();
+                    from_nodes.push(from_node);
+                    to_nodes.push(to_node);
                 }
             }
 
@@ -375,10 +375,10 @@ mod tests {
 
             for x in 0..2 {
                 for z in 0..2 {
-                    let from_node = MortonCode::encode_xyz(x, 1, z).as_u8();
-                    let to_node = MortonCode::encode_xyz(x, 0, z).as_u8();
-                    from_nodes.push(from_node as usize);
-                    to_nodes.push(to_node as usize);
+                    let from_node = MortonCode::encode_xyz(x, 1, z).as_usize().unwrap();
+                    let to_node = MortonCode::encode_xyz(x, 0, z).as_usize().unwrap();
+                    from_nodes.push(from_node);
+                    to_nodes.push(to_node);
                 }
             }
 
@@ -393,10 +393,10 @@ mod tests {
 
             for x in 0..2 {
                 for z in 0..2 {
-                    let from_node = MortonCode::encode_xyz(x, 0, z).as_u8();
-                    let to_node = MortonCode::encode_xyz(x, 1, z).as_u8();
-                    from_nodes.push(from_node as usize);
-                    to_nodes.push(to_node as usize);
+                    let from_node = MortonCode::encode_xyz(x, 0, z).as_usize().unwrap();
+                    let to_node = MortonCode::encode_xyz(x, 1, z).as_usize().unwrap();
+                    from_nodes.push(from_node);
+                    to_nodes.push(to_node);
                 }
             }
 
@@ -411,10 +411,12 @@ mod tests {
         {
             let mut subnodes = Vec::new();
 
-            for y in 0..4 {
-                for z in 0..4 {
-                    let subnode = MortonCode::encode_xyz(0, y, z).as_u8();
-                    subnodes.push((0, y as u8, z as u8, subnode));
+            for y in 0_u8..4_u8 {
+                for z in 0_u8..4_u8 {
+                    let subnode = MortonCode::encode_xyz(0, y.into(), z.into())
+                        .as_u8()
+                        .unwrap();
+                    subnodes.push((0_u8, y, z, subnode));
                 }
             }
 
@@ -425,10 +427,12 @@ mod tests {
         {
             let mut subnodes = Vec::new();
 
-            for y in 0..4 {
-                for x in 0..4 {
-                    let subnode = MortonCode::encode_xyz(x, y, 0).as_u8();
-                    subnodes.push((x as u8, y as u8, 0, subnode));
+            for y in 0_u8..4_u8 {
+                for x in 0_u8..4_u8 {
+                    let subnode = MortonCode::encode_xyz(x.into(), y.into(), 0)
+                        .as_u8()
+                        .unwrap();
+                    subnodes.push((x, y, 0, subnode));
                 }
             }
 
@@ -439,10 +443,12 @@ mod tests {
         {
             let mut subnodes = Vec::new();
 
-            for y in 0..4 {
-                for z in 0..4 {
-                    let subnode = MortonCode::encode_xyz(3, y, z).as_u8();
-                    subnodes.push((3, y as u8, z as u8, subnode));
+            for y in 0_u8..4_u8 {
+                for z in 0_u8..4_u8 {
+                    let subnode = MortonCode::encode_xyz(3, y.into(), z.into())
+                        .as_u8()
+                        .unwrap();
+                    subnodes.push((3, y, z, subnode));
                 }
             }
 
@@ -453,10 +459,12 @@ mod tests {
         {
             let mut subnodes = Vec::new();
 
-            for y in 0..4 {
-                for x in 0..4 {
-                    let subnode = MortonCode::encode_xyz(x, y, 3).as_u8();
-                    subnodes.push((x as u8, y as u8, 3, subnode));
+            for y in 0_u8..4_u8 {
+                for x in 0_u8..4_u8 {
+                    let subnode = MortonCode::encode_xyz(x.into(), y.into(), 3)
+                        .as_u8()
+                        .unwrap();
+                    subnodes.push((x, y, 3, subnode));
                 }
             }
 
@@ -467,10 +475,12 @@ mod tests {
         {
             let mut subnodes = Vec::new();
 
-            for z in 0..4 {
-                for x in 0..4 {
-                    let subnode = MortonCode::encode_xyz(x, 0, z).as_u8();
-                    subnodes.push((x as u8, 0, z as u8, subnode));
+            for z in 0_u8..4_u8 {
+                for x in 0_u8..4_u8 {
+                    let subnode = MortonCode::encode_xyz(x.into(), 0, z.into())
+                        .as_u8()
+                        .unwrap();
+                    subnodes.push((x, 0, z, subnode));
                 }
             }
 
@@ -481,10 +491,12 @@ mod tests {
         {
             let mut subnodes = Vec::new();
 
-            for z in 0..4 {
-                for x in 0..4 {
-                    let subnode = MortonCode::encode_xyz(x, 3, z).as_u8();
-                    subnodes.push((x as u8, 3, z as u8, subnode));
+            for z in 0_u8..4_u8 {
+                for x in 0_u8..4_u8 {
+                    let subnode = MortonCode::encode_xyz(x.into(), 3, z.into())
+                        .as_u8()
+                        .unwrap();
+                    subnodes.push((x, 3, z, subnode));
                 }
             }
 
@@ -504,15 +516,17 @@ mod tests {
         let mut duplicity_check = HashSet::new();
         let mut result = Vec::new();
 
-        for x in 0..2 {
-            for y in 0..2 {
-                for z in 0..2 {
-                    let node = MortonCode::encode_xyz(x, y, z).as_u8();
+        for x in 0_u8..2_u8 {
+            for y in 0_u8..2_u8 {
+                for z in 0_u8..2_u8 {
+                    let node = MortonCode::encode_xyz(x.into(), y.into(), z.into())
+                        .as_u8()
+                        .unwrap();
 
                     for (face, subnode) in NEIGHBOR_POSITION_OFFSETS.iter().enumerate() {
-                        let nx = x as i32 + subnode.0;
-                        let ny = y as i32 + subnode.1;
-                        let nz = z as i32 + subnode.2;
+                        let nx = i32::from(x) + subnode.0;
+                        let ny = i32::from(y) + subnode.1;
+                        let nz = i32::from(z) + subnode.2;
 
                         if !(0..=1).contains(&nx)
                             || !(0..=1).contains(&ny)
@@ -539,8 +553,13 @@ mod tests {
                             }
                         };
 
-                        let sibling =
-                            MortonCode::encode_xyz(nx as u32, ny as u32, nz as u32).as_u8();
+                        let sibling = MortonCode::encode_xyz(
+                            u32::try_from(nx).unwrap(),
+                            u32::try_from(ny).unwrap(),
+                            u32::try_from(nz).unwrap(),
+                        )
+                        .as_u8()
+                        .unwrap();
 
                         if duplicity_check.contains(&(node, sibling)) {
                             continue;
@@ -564,19 +583,20 @@ mod tests {
     fn test_subnode_neighbors() {
         let mut neighbors = Vec::new();
 
-        for x in 0..4 {
-            for y in 0..4 {
-                for z in 0..4 {
-                    let node = MortonCode::encode_xyz(x, y, z).as_u8();
+        for x in 0..4_u8 {
+            for y in 0..4_u8 {
+                for z in 0..4_u8 {
+                    let node = MortonCode::encode_xyz(x.into(), y.into(), z.into())
+                        .as_u8()
+                        .unwrap();
                     let mut arr = [0; 6];
 
                     for (i, neighbor) in NEIGHBOR_POSITION_OFFSETS.iter().enumerate() {
-                        let nx = (x as i32 + neighbor.0 + 4) % 4;
-                        let ny = (y as i32 + neighbor.1 + 4) % 4;
-                        let nz = (z as i32 + neighbor.2 + 4) % 4;
+                        let nx = u32::try_from((i32::from(x) + neighbor.0 + 4) % 4).unwrap();
+                        let ny = u32::try_from((i32::from(y) + neighbor.1 + 4) % 4).unwrap();
+                        let nz = u32::try_from((i32::from(z) + neighbor.2 + 4) % 4).unwrap();
 
-                        let neighbor =
-                            MortonCode::encode_xyz(nx as u32, ny as u32, nz as u32).as_u8();
+                        let neighbor = MortonCode::encode_xyz(nx, ny, nz).as_u8().unwrap();
 
                         arr[i] = neighbor;
                     }

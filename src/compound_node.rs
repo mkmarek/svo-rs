@@ -10,25 +10,26 @@ pub struct CompoundNode(u64);
 
 impl CompoundNode {
     /// Top face indexes in a 4x4x4 cube encoded into a u64.
-    const TOP_FACE_POSITIONS: u64 = 0b1100110011001100000000000000000011001100110011;
+    const TOP_FACE_POSITIONS: u64 = 0b11_0011_0011_0011_0000_0000_0000_0000_0011_0011_0011_0011;
 
     /// Bottom face indexes in a 4x4x4 cube encoded into a u64.
     const BOTTOM_FACE_POSITIONS: u64 =
-        0b1100110011001100000000000000000011001100110011000000000000000000;
+        0b1100_1100_1100_1100_0000_0000_0000_0000_1100_1100_1100_1100_0000_0000_0000_0000;
 
     /// Left face indexes in a 4x4x4 cube encoded into a u64.
-    const LEFT_FACE_POSITIONS: u64 = 0b1010101000000000101010100000000010101010000000001010101;
+    const LEFT_FACE_POSITIONS: u64 =
+        0b101_0101_0000_0000_0101_0101_0000_0000_0101_0101_0000_0000_0101_0101;
 
     /// Right face indexes in a 4x4x4 cube encoded into a u64.
     const RIGHT_FACE_POSITIONS: u64 =
-        0b1010101000000000101010100000000010101010000000001010101000000000;
+        0b1010_1010_0000_0000_1010_1010_0000_0000_1010_1010_0000_0000_1010_1010_0000_0000;
 
     /// Front face indexes in a 4x4x4 cube encoded into a u64.
-    const FRONT_FACE_POSITIONS: u64 = 0b1111000011110000111100001111;
+    const FRONT_FACE_POSITIONS: u64 = 0b1111_0000_1111_0000_1111_0000_1111;
 
     /// Back face indexes in a 4x4x4 cube encoded into a u64.
     const BACK_FACE_POSITIONS: u64 =
-        0b1111000011110000111100001111000000000000000000000000000000000000;
+        0b1111_0000_1111_0000_1111_0000_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000;
 
     /// All face indexes in a 4x4x4 cube encoded into an array of u64s.
     const FACE_POSITIONS: [u64; 6] = [
@@ -67,7 +68,7 @@ impl CompoundNode {
     /// Sets voxel at a specific position (`x`, `y`, `z`) to `value` (true = filled, false = empty)
     #[inline]
     pub fn set(&mut self, x: u32, y: u32, z: u32, value: bool) {
-        let index = MortonCode::encode_xyz(x, y, z).as_usize();
+        let index = MortonCode::encode_xyz(x, y, z).as_u64();
 
         if value {
             self.0 |= 1 << index;
@@ -82,7 +83,7 @@ impl CompoundNode {
     #[allow(dead_code)]
     #[inline]
     pub fn get(&self, x: u32, y: u32, z: u32) -> bool {
-        let index = MortonCode::encode_xyz(x, y, z).as_usize();
+        let index = MortonCode::encode_xyz(x, y, z).as_u64();
 
         self.0 & (1 << index) != 0
     }

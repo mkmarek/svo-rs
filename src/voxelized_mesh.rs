@@ -1,12 +1,12 @@
 use std::error::Error;
 
-use crate::point::{IPoint, UPoint};
+use bevy_math::{IVec3, UVec3};
 
 /// Collection of voxels that represent a mesh
 pub struct VoxelizedMesh {
-    voxels: Vec<UPoint>,
+    voxels: Vec<UVec3>,
     voxel_size: f32,
-    left_top_corner: IPoint,
+    left_top_corner: IVec3,
 }
 
 impl VoxelizedMesh {
@@ -15,18 +15,20 @@ impl VoxelizedMesh {
     /// # Example
     ///
     /// ```
-    /// use svo_rs::{VoxelizedMesh, UPoint, IPoint};
+    /// use svo_rs::{VoxelizedMesh};
+    /// use bevy_math::{IVec3, UVec3};
     ///
     /// let voxels = vec![
-    ///  UPoint::new(0, 0, 0),
-    ///  UPoint::new(1, 0, 0),
-    ///  UPoint::new(0, 1, 0),
-    ///  UPoint::new(0, 0, 1),
+    ///  UVec3::new(0, 0, 0),
+    ///  UVec3::new(1, 0, 0),
+    ///  UVec3::new(0, 1, 0),
+    ///  UVec3::new(0, 0, 1),
     /// ];
     ///
-    /// let voxelized_mesh = VoxelizedMesh::new(voxels, 1.0, IPoint::new(0, 0, 0));
+    /// let voxelized_mesh = VoxelizedMesh::new(voxels, 1.0, IVec3::new(0, 0, 0));
     /// ```
-    pub fn new(voxels: Vec<UPoint>, voxel_size: f32, left_top_corner: IPoint) -> Self {
+    #[must_use]
+    pub fn new(voxels: Vec<UVec3>, voxel_size: f32, left_top_corner: IVec3) -> Self {
         Self {
             voxels,
             voxel_size,
@@ -35,6 +37,7 @@ impl VoxelizedMesh {
     }
 
     /// Returns the voxel size of each voxel in the mesh
+    #[must_use]
     pub fn voxel_size(&self) -> f32 {
         self.voxel_size
     }
@@ -44,12 +47,15 @@ impl VoxelizedMesh {
     /// # Example
     ///
     /// ```
-    /// use svo_rs::{VoxelizedMesh, IPoint};
+    /// use svo_rs::{VoxelizedMesh};
+    /// use bevy_math::IVec3;
     ///
-    /// let voxelized_mesh = VoxelizedMesh::sphere(1.0, 1.0, IPoint::new(0, 0, 0));
+    /// let voxelized_mesh = VoxelizedMesh::sphere(1.0, 1.0, IVec3::new(0, 0, 0));
     /// ```
-    pub fn sphere(radius: f32, voxel_size: f32, position: IPoint) -> Self {
+    #[must_use]
+    pub fn sphere(radius: f32, voxel_size: f32, position: IVec3) -> Self {
         let mut voxels = Vec::new();
+        #[allow(clippy::cast_possible_truncation)]
         let radius = (radius / voxel_size).ceil() as i32;
 
         let left_top_corner = position - radius;
@@ -61,7 +67,8 @@ impl VoxelizedMesh {
                 let mut z = -radius;
                 while z <= radius {
                     if (x * x + y * y + z * z) <= (radius * radius) {
-                        voxels.push(UPoint::new(
+                        #[allow(clippy::cast_sign_loss)]
+                        voxels.push(UVec3::new(
                             (x - left_top_corner.x) as u32,
                             (y - left_top_corner.y) as u32,
                             (z - left_top_corner.z) as u32,
@@ -87,12 +94,16 @@ impl VoxelizedMesh {
     /// ```
     /// use bevy::prelude::*;
     /// use bevy_render::prelude::shape::UVSphere;
-    /// use svo_rs::{VoxelizedMesh, IPoint};
+    /// use svo_rs::{VoxelizedMesh};
     ///
     /// let sphere = Mesh::from(UVSphere::default());
     /// let mesh = VoxelizedMesh::from_mesh(&sphere, Transform::IDENTITY.compute_matrix(), 1.0)
     ///     .expect("Failed to voxelize mesh");
     /// ```
+    ///
+    /// # Errors
+    /// Returns an error if the mesh has no indices or vertices
+    ///
     #[cfg(feature = "bevy")]
     pub fn from_mesh(
         mesh: &bevy_render::prelude::Mesh,
@@ -137,7 +148,8 @@ impl VoxelizedMesh {
 
         let mut voxels = std::collections::HashSet::new();
 
-        let left_top_corner = IPoint::new(
+        #[allow(clippy::cast_possible_truncation)]
+        let left_top_corner = IVec3::new(
             (triangle_min.x / voxel_size).round() as i32 - 1,
             (triangle_min.y / voxel_size).round() as i32 - 1,
             (triangle_min.z / voxel_size).round() as i32 - 1,
@@ -160,16 +172,11 @@ impl VoxelizedMesh {
 
     /// Draws the voxelized mesh using bevy gizmos
     #[cfg(feature = "bevy")]
+    #[allow(clippy::cast_precision_loss)]
     pub fn draw_gizmos(&self, gizmos: &mut bevy_gizmos::prelude::Gizmos) {
         for voxel in &self.voxels {
-            let voxel = bevy_math::Vec3::new(voxel.x as f32, voxel.y as f32, voxel.z as f32)
-                * self.voxel_size;
-            let left_top_corner = bevy_math::Vec3::new(
-                self.left_top_corner.x as f32,
-                self.left_top_corner.y as f32,
-                self.left_top_corner.z as f32,
-            ) * self.voxel_size;
-
+            let voxel = voxel.as_vec3() * self.voxel_size;
+            let left_top_corner = self.left_top_corner.as_vec3() * self.voxel_size;
             let half_size = bevy_math::Vec3::ONE * self.voxel_size / 2.0;
 
             gizmos.cuboid(
@@ -178,15 +185,16 @@ impl VoxelizedMesh {
                 )
                 .with_scale(bevy_math::Vec3::ONE * self.voxel_size),
                 bevy_render::prelude::Color::RED,
-            )
+            );
         }
     }
 
     /// Returns the voxels of the mesh
-    pub fn voxels(&self) -> Vec<IPoint> {
+    #[must_use]
+    pub fn voxels(&self) -> Vec<IVec3> {
         self.voxels
             .iter()
-            .map(|v| v.to_i32() + self.left_top_corner)
+            .map(|v| v.as_ivec3() + self.left_top_corner)
             .collect()
     }
 }
@@ -203,11 +211,12 @@ impl std::fmt::Display for VoxelizeError {
 }
 
 #[cfg(feature = "bevy")]
+#[allow(clippy::cast_precision_loss)]
 fn triangle_to_voxels(
     triangle: &[bevy_math::Vec3; 3],
     voxel_size: f32,
-    left_top_corner: IPoint,
-) -> Vec<UPoint> {
+    left_top_corner: IVec3,
+) -> Vec<UVec3> {
     let mut result = Vec::new();
     let left_top_corner = bevy_math::Vec3::new(
         left_top_corner.x as f32,
@@ -226,17 +235,17 @@ fn triangle_to_voxels(
         |max, v| bevy_math::Vec3::new(max.x.max(v.x), max.y.max(v.y), max.z.max(v.z)),
     ) - left_top_corner;
 
-    let min = (min / voxel_size).floor();
-    let max = (max / voxel_size).ceil();
+    let min = (min / voxel_size).floor().as_uvec3();
+    let max = (max / voxel_size).ceil().as_uvec3();
 
-    for x in (min.x as u32)..=(max.x as u32) {
-        for y in (min.y as u32)..=(max.y as u32) {
-            for z in (min.z as u32)..=(max.z as u32) {
+    for x in min.x..=max.x {
+        for y in min.y..=max.y {
+            for z in min.z..=max.z {
                 let cube = bevy_math::Vec3::new(x as f32, y as f32, z as f32) * voxel_size
                     + left_top_corner;
 
                 if cube_triangle_intersection(cube, voxel_size / 2.0, triangle) {
-                    result.push(UPoint::new(x, y, z));
+                    result.push(UVec3::new(x, y, z));
                 }
             }
         }
@@ -410,4 +419,3 @@ fn sat_test(
 
     true
 }
-

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_render::prelude::shape::UVSphere;
-use svo_rs::{FPoint, SparseVoxelOctree, SparseVoxelOctreeBuilder, VoxelizedMesh};
+use svo_rs::{SparseVoxelOctree, SparseVoxelOctreeBuilder, VoxelizedMesh};
 
 fn main() {
     App::new()
@@ -57,8 +57,8 @@ fn setup(
     let mut builder = SparseVoxelOctreeBuilder::new(VOXEL_SIZE);
 
     builder.set_bounds(
-        FPoint::new(-AREA_HALF_SIZE, -AREA_HALF_SIZE, -AREA_HALF_SIZE),
-        FPoint::new(AREA_HALF_SIZE, AREA_HALF_SIZE, AREA_HALF_SIZE),
+        Vec3::new(-AREA_HALF_SIZE, -AREA_HALF_SIZE, -AREA_HALF_SIZE),
+        Vec3::new(AREA_HALF_SIZE, AREA_HALF_SIZE, AREA_HALF_SIZE),
     );
     builder.add_mesh(
         VoxelizedMesh::from_mesh(&sphere, Transform::IDENTITY.compute_matrix(), VOXEL_SIZE)
@@ -103,7 +103,8 @@ fn setup(
         .insert(Agent);
 }
 
-pub fn subdivide_path(link: Vec<FPoint>, n: usize) -> Vec<FPoint> {
+#[must_use]
+pub fn subdivide_path(link: Vec<Vec3>, n: usize) -> Vec<Vec3> {
     let mut result = Vec::new();
 
     for i in 0..link.len() - 1 {
@@ -120,27 +121,29 @@ pub fn subdivide_path(link: Vec<FPoint>, n: usize) -> Vec<FPoint> {
     result
 }
 
-pub fn string_pulling_path(link: Vec<FPoint>, tree: &SparseVoxelOctree) -> Vec<FPoint> {
+#[must_use]
+pub fn string_pulling_path(link: Vec<Vec3>, tree: &SparseVoxelOctree) -> Vec<Vec3> {
     let mut result = Vec::new();
 
     let mut current = link[0];
 
-    for i in 1..link.len() {
+    (1..link.len()).for_each(|i| {
         let next = link[i];
 
         if tree.is_in_line_of_sight(current, next) {
-            continue;
+            return;
         }
 
         result.push(current);
         current = next;
-    }
+    });
 
     result.push(current);
 
     result
 }
 
+#[allow(clippy::type_complexity)]
 fn calculate_path(
     agents: Query<(Entity, &Transform), (Without<CalculatedPath>, With<Agent>)>,
     mut commands: Commands,
@@ -149,8 +152,8 @@ fn calculate_path(
     for (entity, transform) in agents.iter() {
         let destination = (-transform.translation).normalize() * AREA_HALF_SIZE * 0.9;
 
-        let start_point: FPoint = transform.translation.into();
-        let end_point: FPoint = destination.into();
+        let start_point: Vec3 = transform.translation;
+        let end_point: Vec3 = destination;
 
         let start = svo.tree.find_node(start_point).unwrap();
         let end = svo.tree.find_node(end_point).unwrap();
@@ -174,8 +177,8 @@ fn calculate_path(
 
         if solution.is_none() {
             println!("No path found");
-            println!("Start: {:?}", start);
-            println!("Destination: {:?}", end);
+            println!("Start: {start:?}");
+            println!("Destination: {end:?}");
             continue;
         }
 
@@ -187,8 +190,10 @@ fn calculate_path(
             let start = solution.0[i];
             let end = solution.0[i + 1];
 
-            let face = svo.tree.face_position_between(start, end)
-                .expect(format!("Failed to find face between nodes {:?} {:?}", start, end).as_str());
+            let face = svo
+                .tree
+                .face_position_between(start, end)
+                .unwrap_or_else(|| panic!("Failed to find face between nodes {start:?} {end:?}"));
 
             path.push(face);
         }
@@ -199,7 +204,7 @@ fn calculate_path(
         let path = string_pulling_path(path, &svo.tree);
 
         commands.entity(entity).insert(CalculatedPath {
-            path: path.into_iter().map(|p| p.into()).collect(),
+            path: path.into_iter().map(std::convert::Into::into).collect(),
             current: 0,
             progress: 0.0,
         });
@@ -212,8 +217,8 @@ fn follow_path(
     mut gizmos: Gizmos,
     time: Res<Time>,
 ) {
-    for (entity, mut transform, mut path) in agents.iter_mut() {
-        if path.path.len() > 0 {
+    for (entity, mut transform, mut path) in &mut agents {
+        if !path.path.is_empty() {
             if path.current >= path.path.len() - 1 {
                 commands.entity(entity).remove::<CalculatedPath>();
                 continue;

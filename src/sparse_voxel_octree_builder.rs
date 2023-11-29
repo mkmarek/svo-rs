@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
+use bevy_math::{IVec3, UVec3, Vec3};
+
 use crate::{
     compound_node::CompoundNode,
     consts::{NEIGHBOR_CONNECTIONS, OFFSETS_IN_MORTON_CODE_ORDER, SIBLING_CONNECTIONS},
     morton_code::MortonCode,
-    point::{FPoint, IPoint, UPoint},
     sparse_voxel_octree_link::SparseVoxelOctreeLink,
     sparse_voxel_octree_node::SparseVoxelOctreeNode,
     voxelized_mesh::VoxelizedMesh,
@@ -18,19 +19,20 @@ use crate::{
 /// # Example
 ///
 /// ```
-/// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint};
+/// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh};
+/// use bevy_math::{IVec3, UVec3};
 ///
 /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
 ///
-/// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
+/// builder.add_mesh(VoxelizedMesh::new(vec![UVec3::new(0, 3, 0)], 1.0, IVec3::ZERO));
 ///
 /// let octree = builder.build();
 /// ```
 pub struct SparseVoxelOctreeBuilder {
     voxel_size: f32,
     meshes: Vec<VoxelizedMesh>,
-    min: IPoint,
-    max: IPoint,
+    min: IVec3,
+    max: IVec3,
 }
 
 impl SparseVoxelOctreeBuilder {
@@ -45,12 +47,13 @@ impl SparseVoxelOctreeBuilder {
     ///
     /// let builder = SparseVoxelOctreeBuilder::new(1.0);
     /// ```
+    #[must_use]
     pub fn new(voxel_size: f32) -> Self {
         Self {
             meshes: Vec::new(),
             voxel_size,
-            min: IPoint::MAX,
-            max: IPoint::MIN,
+            min: IVec3::MAX,
+            max: IVec3::MIN,
         }
     }
 
@@ -59,11 +62,12 @@ impl SparseVoxelOctreeBuilder {
     /// # Example
     ///
     /// ```
-    /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint};
+    /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh};
+    /// use bevy_math::{IVec3, UVec3};
     ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
     ///
-    /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
+    /// builder.add_mesh(VoxelizedMesh::new(vec![UVec3::new(0, 3, 0)], 1.0, IVec3::ZERO));
     /// ```
     pub fn add_mesh(&mut self, mesh: VoxelizedMesh) {
         self.meshes.push(mesh);
@@ -78,16 +82,17 @@ impl SparseVoxelOctreeBuilder {
     /// # Example
     ///
     /// ```
-    /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint, FPoint};
+    /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh};
+    /// use bevy_math::{IVec3, UVec3, Vec3};
     ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
     ///
-    /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
-    /// builder.set_bounds(FPoint::new(-10.0, -10.0, -10.0), FPoint::new(10.0, 10.0, 10.0));
+    /// builder.add_mesh(VoxelizedMesh::new(vec![UVec3::new(0, 3, 0)], 1.0, IVec3::ZERO));
+    /// builder.set_bounds(Vec3::new(-10.0, -10.0, -10.0), Vec3::new(10.0, 10.0, 10.0));
     /// ```
-    pub fn set_bounds(&mut self, min: FPoint, max: FPoint) {
-        self.min = (min / self.voxel_size).floor().to_i32();
-        self.max = (max / self.voxel_size).ceil().to_i32();
+    pub fn set_bounds(&mut self, min: Vec3, max: Vec3) {
+        self.min = (min / self.voxel_size).floor().as_ivec3();
+        self.max = (max / self.voxel_size).ceil().as_ivec3();
     }
 
     /// Builds the sparse voxel octree.
@@ -95,14 +100,16 @@ impl SparseVoxelOctreeBuilder {
     /// # Example
     ///
     /// ```
-    /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh, IPoint, UPoint};
+    /// use svo_rs::{SparseVoxelOctreeBuilder, VoxelizedMesh};
+    /// use bevy_math::{IVec3, UVec3};
     ///
     /// let mut builder = SparseVoxelOctreeBuilder::new(1.0);
     ///
-    /// builder.add_mesh(VoxelizedMesh::new(vec![UPoint::new(0, 3, 0)], 1.0, IPoint::ZERO));
+    /// builder.add_mesh(VoxelizedMesh::new(vec![UVec3::new(0, 3, 0)], 1.0, IVec3::ZERO));
     ///
     /// let octree = builder.build();
     /// ```
+    #[must_use]
     pub fn build(self) -> SparseVoxelOctree {
         let mut voxels = Vec::new();
 
@@ -148,8 +155,8 @@ impl SparseVoxelOctreeBuilder {
                 if let Some(first_child) = layers[i][y].first_child {
                     let layer = &mut layers[first_child.layer_index];
 
-                    for z in 0..8 {
-                        let node_index = first_child.node_index + z as usize;
+                    for z in 0..8_usize {
+                        let node_index = first_child.node_index + z;
                         let node = &mut layer[node_index];
                         node.parent = Some(SparseVoxelOctreeLink::new(i, y, None));
                     }
@@ -182,8 +189,7 @@ impl SparseVoxelOctreeBuilder {
                     ));
                 }
 
-                for (neighbor_index_1, neighbor_index_2, offset_1, offset_2) in
-                    SIBLING_CONNECTIONS.iter()
+                for (neighbor_index_1, neighbor_index_2, offset_1, offset_2) in &SIBLING_CONNECTIONS
                 {
                     layers[first_child.layer_index][first_child.node_index + offset_1].neighbors
                         [*neighbor_index_1] = Some(SparseVoxelOctreeLink::new(
@@ -238,18 +244,19 @@ impl SparseVoxelOctreeBuilder {
     }
 
     fn validate_all_children_present(nodes: &[SparseVoxelOctreeNode], node_size: u32) -> bool {
-        let node_size = node_size as i32;
-
         if nodes.len() % 8 != 0 {
             return false;
         }
 
         for i in (0..nodes.len()).step_by(8) {
-            let first_position = nodes[i].position.to_i32() / node_size;
-
+            let first_position = nodes[i].position / node_size;
             for y in 0..8 {
-                let node_pos = nodes[i + y].position.to_i32() / node_size;
-                if node_pos - first_position != &OFFSETS_IN_MORTON_CODE_ORDER[y] {
+                let node_pos = nodes[i + y].position / node_size;
+                let diff = node_pos - first_position;
+                if diff.x != OFFSETS_IN_MORTON_CODE_ORDER[y].0.into()
+                    || diff.y != OFFSETS_IN_MORTON_CODE_ORDER[y].1.into()
+                    || diff.z != OFFSETS_IN_MORTON_CODE_ORDER[y].2.into()
+                {
                     return false;
                 }
             }
@@ -259,22 +266,22 @@ impl SparseVoxelOctreeBuilder {
     }
 
     fn collect_leafs_and_zero_layer_nodes(
-        voxels: &[IPoint],
-        origin: IPoint,
+        voxels: &[IVec3],
+        origin: IVec3,
     ) -> (Vec<SparseVoxelOctreeNode>, Vec<CompoundNode>) {
         let mut leafs = HashMap::new();
         let mut layer_zero = HashMap::new();
 
         // create 4x4 leafs
         for voxel in voxels {
-            let offset = (*voxel - origin).to_u32();
+            let offset = (*voxel - origin).as_uvec3();
             let leaf_parent_coords = offset >> 3 << 3;
 
             for x in 0..2 {
                 for y in 0..2 {
                     for z in 0..2 {
-                        let leaf_coords = UPoint::new(x * 4, y * 4, z * 4);
-                        let leaf_coords: UPoint = leaf_parent_coords + leaf_coords;
+                        let leaf_coords = UVec3::new(x * 4, y * 4, z * 4);
+                        let leaf_coords: UVec3 = leaf_parent_coords + leaf_coords;
 
                         leafs.entry(leaf_coords).or_insert_with(CompoundNode::new);
                         layer_zero
@@ -286,13 +293,14 @@ impl SparseVoxelOctreeBuilder {
         }
 
         for voxel in voxels {
-            let offset = (*voxel - origin).to_u32();
-            let leaf_coords: UPoint = offset >> 2 << 2;
+            let offset = (*voxel - origin).as_uvec3();
+            let leaf_coords: UVec3 = offset >> 2 << 2;
 
-            let layer_zero = &mut layer_zero
+            let layer_zero = layer_zero
                 .get_mut(&leaf_coords)
                 .expect("layer zero node not found");
-            let leafs = &mut leafs.get_mut(&leaf_coords).expect("leaf node not found");
+
+            let leafs = leafs.get_mut(&leaf_coords).expect("leaf node not found");
 
             let local_coords = offset - leaf_coords;
             leafs.set(local_coords.x, local_coords.y, local_coords.z, true);
@@ -316,12 +324,14 @@ impl SparseVoxelOctreeBuilder {
         (layer_zero, leafs)
     }
 
-    fn get_origin_and_size(min: IPoint, max: IPoint) -> (IPoint, u32) {
+    fn get_origin_and_size(min: IVec3, max: IVec3) -> (IVec3, u32) {
         if min == max {
             return (min, 1);
         }
 
         let size = max - min;
+
+        #[allow(clippy::cast_sign_loss)]
         let mut size = size.max_element() as u32;
 
         if !size.is_power_of_two() {
@@ -331,13 +341,13 @@ impl SparseVoxelOctreeBuilder {
         (min, size)
     }
 
-    fn get_min_max(voxels: &[IPoint]) -> (IPoint, IPoint) {
+    fn get_min_max(voxels: &[IVec3]) -> (IVec3, IVec3) {
         if voxels.is_empty() {
-            return (IPoint::ZERO, IPoint::ZERO);
+            return (IVec3::ZERO, IVec3::ZERO);
         }
 
-        let mut min = IPoint::MAX;
-        let mut max = IPoint::MIN;
+        let mut min = IVec3::MAX;
+        let mut max = IVec3::MIN;
 
         for voxel in voxels {
             min = min.min(*voxel);
@@ -356,9 +366,10 @@ impl SparseVoxelOctreeBuilder {
         let next_node_size = current_node_size * 2;
         let last_layer = layers.last_mut().unwrap();
 
-        if !Self::validate_all_children_present(last_layer, current_node_size) {
-            panic!("not all children present");
-        }
+        assert!(
+            Self::validate_all_children_present(last_layer, current_node_size),
+            "not all children present"
+        );
 
         let mut layer = Vec::new();
 
@@ -377,11 +388,9 @@ impl SparseVoxelOctreeBuilder {
             loop {
                 let first_position = {
                     if layer.len() <= i {
-                        IPoint::ZERO
+                        UVec3::ZERO
                     } else {
-                        (layer[i].position.to_i32() / (next_node_size as i32 * 2))
-                            * next_node_size as i32
-                            * 2
+                        (layer[i].position / (next_node_size * 2)) * next_node_size * 2
                     }
                 };
 
@@ -391,7 +400,7 @@ impl SparseVoxelOctreeBuilder {
                         i + y,
                         first_position,
                         next_node_size,
-                        (*item).into(),
+                        UVec3::new(item.0.into(), item.1.into(), item.2.into()),
                     );
                 }
 
@@ -409,22 +418,31 @@ impl SparseVoxelOctreeBuilder {
     fn fill_node_if_it_doesnt_exist(
         layer: &mut Vec<SparseVoxelOctreeNode>,
         node_index: usize,
-        first_position: IPoint,
+        first_position: UVec3,
         node_size: u32,
-        offset: IPoint,
+        offset: UVec3,
     ) {
         let node_1_exists = {
             if layer.len() > node_index {
-                let node_1_pos = layer[node_index].position.to_i32();
-                (node_1_pos - first_position) / node_size as i32 == offset
+                let node_1_pos = layer[node_index].position;
+
+                if first_position.x > node_1_pos.x
+                    || first_position.y > node_1_pos.y
+                    || first_position.z > node_1_pos.z
+                {
+                    false
+                } else {
+                    (node_1_pos - first_position) / node_size == offset
+                }
             } else {
                 false
             }
         };
 
         if !node_1_exists {
-            let pos = first_position + offset * node_size as i32;
-            let node = SparseVoxelOctreeNode::node(pos.to_u32(), node_size);
+            let pos = first_position + offset * node_size;
+
+            let node = SparseVoxelOctreeNode::node(pos, node_size);
             layer.insert(node_index, node);
         }
     }
@@ -432,44 +450,46 @@ impl SparseVoxelOctreeBuilder {
 
 #[cfg(test)]
 mod tests {
+    use bevy_math::{IVec3, UVec3};
+
     use super::*;
 
     #[test]
     fn test_get_min_max() {
         let voxels = vec![
-            IPoint::new(0, 0, 0),
-            IPoint::new(1, 1, 1),
-            IPoint::new(2, 2, 2),
-            IPoint::new(3, 3, 3),
+            IVec3::new(0, 0, 0),
+            IVec3::new(1, 1, 1),
+            IVec3::new(2, 2, 2),
+            IVec3::new(3, 3, 3),
         ];
 
         let (min, max) = SparseVoxelOctreeBuilder::get_min_max(&voxels);
 
-        assert_eq!(min, IPoint::new(0, 0, 0));
-        assert_eq!(max, IPoint::new(3, 3, 3));
+        assert_eq!(min, IVec3::new(0, 0, 0));
+        assert_eq!(max, IVec3::new(3, 3, 3));
     }
 
     #[test]
     fn test_get_min_max_no_voxels() {
         let (min, max) = SparseVoxelOctreeBuilder::get_min_max(&[]);
 
-        assert_eq!(min, IPoint::new(0, 0, 0));
-        assert_eq!(max, IPoint::new(0, 0, 0));
+        assert_eq!(min, IVec3::new(0, 0, 0));
+        assert_eq!(max, IVec3::new(0, 0, 0));
     }
 
     #[test]
     fn test_get_origin_and_size() {
         let voxels = vec![
-            IPoint::new(0, 0, 0),
-            IPoint::new(1, 1, 1),
-            IPoint::new(2, 2, 2),
-            IPoint::new(3, 3, 3),
+            IVec3::new(0, 0, 0),
+            IVec3::new(1, 1, 1),
+            IVec3::new(2, 2, 2),
+            IVec3::new(3, 3, 3),
         ];
 
         let (min, max) = SparseVoxelOctreeBuilder::get_min_max(&voxels);
         let (origin, size) = SparseVoxelOctreeBuilder::get_origin_and_size(min, max);
 
-        assert_eq!(origin, IPoint::new(0, 0, 0));
+        assert_eq!(origin, IVec3::new(0, 0, 0));
         assert_eq!(size, 4);
     }
 
@@ -478,20 +498,20 @@ mod tests {
         let (min, max) = SparseVoxelOctreeBuilder::get_min_max(&[]);
         let (origin, size) = SparseVoxelOctreeBuilder::get_origin_and_size(min, max);
 
-        assert_eq!(origin, IPoint::new(0, 0, 0));
+        assert_eq!(origin, IVec3::new(0, 0, 0));
         assert_eq!(size, 1);
     }
 
     #[test]
     fn test_collect_leafs_and_zero_layer_nodes() {
         let voxels = vec![
-            IPoint::new(4, 4, 4),
-            IPoint::new(5, 5, 5),
-            IPoint::new(6, 6, 6),
-            IPoint::new(0, 0, 0),
-            IPoint::new(1, 1, 1),
-            IPoint::new(2, 2, 2),
-            IPoint::new(3, 3, 3),
+            IVec3::new(4, 4, 4),
+            IVec3::new(5, 5, 5),
+            IVec3::new(6, 6, 6),
+            IVec3::new(0, 0, 0),
+            IVec3::new(1, 1, 1),
+            IVec3::new(2, 2, 2),
+            IVec3::new(3, 3, 3),
         ];
 
         let (min, max) = SparseVoxelOctreeBuilder::get_min_max(&voxels);
@@ -503,38 +523,38 @@ mod tests {
         assert_eq!(layer_zero.len(), 8);
         assert_eq!(leafs.len(), 8);
 
-        assert_eq!(layer_zero[0].position, UPoint::new(0, 0, 0));
+        assert_eq!(layer_zero[0].position, UVec3::new(0, 0, 0));
         assert_eq!(layer_zero[0].size, 4);
         assert!(leafs[0].get(0, 0, 0));
         assert!(leafs[0].get(1, 1, 1));
         assert!(leafs[0].get(2, 2, 2));
         assert!(leafs[0].get(3, 3, 3));
 
-        assert_eq!(layer_zero[1].position, UPoint::new(4, 0, 0));
+        assert_eq!(layer_zero[1].position, UVec3::new(4, 0, 0));
         assert_eq!(layer_zero[1].size, 4);
         assert_eq!(*leafs[1], 0);
 
-        assert_eq!(layer_zero[2].position, UPoint::new(0, 4, 0));
+        assert_eq!(layer_zero[2].position, UVec3::new(0, 4, 0));
         assert_eq!(layer_zero[2].size, 4);
         assert_eq!(*leafs[2], 0);
 
-        assert_eq!(layer_zero[3].position, UPoint::new(4, 4, 0));
+        assert_eq!(layer_zero[3].position, UVec3::new(4, 4, 0));
         assert_eq!(layer_zero[3].size, 4);
         assert_eq!(*leafs[3], 0);
 
-        assert_eq!(layer_zero[4].position, UPoint::new(0, 0, 4));
+        assert_eq!(layer_zero[4].position, UVec3::new(0, 0, 4));
         assert_eq!(layer_zero[4].size, 4);
         assert_eq!(*leafs[4], 0);
 
-        assert_eq!(layer_zero[5].position, UPoint::new(4, 0, 4));
+        assert_eq!(layer_zero[5].position, UVec3::new(4, 0, 4));
         assert_eq!(layer_zero[5].size, 4);
         assert_eq!(*leafs[5], 0);
 
-        assert_eq!(layer_zero[6].position, UPoint::new(0, 4, 4));
+        assert_eq!(layer_zero[6].position, UVec3::new(0, 4, 4));
         assert_eq!(layer_zero[6].size, 4);
         assert_eq!(*leafs[6], 0);
 
-        assert_eq!(layer_zero[7].position, UPoint::new(4, 4, 4));
+        assert_eq!(layer_zero[7].position, UVec3::new(4, 4, 4));
         assert_eq!(layer_zero[7].size, 4);
         assert!(leafs[7].get(0, 0, 0));
         assert!(leafs[7].get(1, 1, 1));
@@ -545,7 +565,7 @@ mod tests {
     #[test]
     fn test_build_octree_with_no_voxels() {
         let mut builder = SparseVoxelOctreeBuilder::new(1.0);
-        builder.set_bounds(FPoint::new(-4.0, -4.0, -4.0), FPoint::new(4.0, 4.0, 4.0));
+        builder.set_bounds(Vec3::new(-4.0, -4.0, -4.0), Vec3::new(4.0, 4.0, 4.0));
         let octree = builder.build();
 
         assert_eq!(octree.layers.len(), 2);
