@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_render::prelude::shape::UVSphere;
-use svo_rs::{SparseVoxelOctree, SparseVoxelOctreeBuilder, VoxelizedMesh};
+use svo_rs::{SparseVoxelOctree, SparseVoxelOctreeBuilder, SparseVoxelOctreeLink, VoxelizedMesh};
 
 fn main() {
     App::new()
@@ -19,8 +19,8 @@ fn main() {
         .run();
 }
 
-const VOXEL_SIZE: f32 = 0.05;
-const AREA_HALF_SIZE: f32 = 2.0;
+const VOXEL_SIZE: f32 = 0.2;
+const AREA_HALF_SIZE: f32 = 3.0;
 
 #[derive(Resource)]
 struct SVOResource {
@@ -35,6 +35,7 @@ struct CalculatedPath {
     path: Vec<Vec3>,
     current: usize,
     progress: f32,
+    visited_nodes: Vec<SparseVoxelOctreeLink>,
 }
 
 fn setup(
@@ -162,9 +163,12 @@ fn calculate_path(
             continue;
         }
 
+        let mut visited_nodes = Vec::new();
+
         let solution = pathfinding::prelude::astar(
             &start,
             |n| {
+                visited_nodes.push(*n);
                 svo.tree
                     .successors(*n)
                     .into_iter()
@@ -207,6 +211,7 @@ fn calculate_path(
             path: path.into_iter().map(std::convert::Into::into).collect(),
             current: 0,
             progress: 0.0,
+            visited_nodes,
         });
     }
 }
@@ -214,6 +219,7 @@ fn calculate_path(
 fn follow_path(
     mut agents: Query<(Entity, &mut Transform, &mut CalculatedPath), With<Agent>>,
     mut commands: Commands,
+    svo: Res<SVOResource>,
     mut gizmos: Gizmos,
     time: Res<Time>,
 ) {
@@ -245,6 +251,9 @@ fn follow_path(
                 gizmos.line(path.path[i], path.path[i + 1], Color::rgb(1.0, 1.0, 1.0));
             }
 
+            for node in &path.visited_nodes {
+                svo.tree.draw_node_gizmo(&mut gizmos, *node, Color::GREEN);
+            }
             // gizmos.line(path.start, path.end, Color::rgb(1.0, 0.0, 0.0));
         }
     }

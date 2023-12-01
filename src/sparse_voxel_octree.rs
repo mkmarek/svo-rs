@@ -499,9 +499,9 @@ impl SparseVoxelOctree {
             #[allow(clippy::cast_precision_loss)]
             let position = position
                 + Vec3::new(
-                    point.0 as f32 * self.voxel_size,
-                    point.1 as f32 * self.voxel_size,
-                    point.2 as f32 * self.voxel_size,
+                    f32::from(point.0) * self.voxel_size,
+                    f32::from(point.1) * self.voxel_size,
+                    f32::from(point.2) * self.voxel_size,
                 )
                 + Vec3::new(
                     self.voxel_size / 2.0,
@@ -513,6 +513,28 @@ impl SparseVoxelOctree {
         }
 
         position + scale_f32 / 2.0
+    }
+
+    #[cfg(feature = "bevy")]
+    #[allow(clippy::cast_precision_loss)]
+    pub fn draw_node_gizmo(
+        &self,
+        gizmos: &mut bevy_gizmos::prelude::Gizmos,
+        link: SparseVoxelOctreeLink,
+        color: bevy_render::prelude::Color,
+    ) {
+        let position = self.node_position(link);
+        let size = if link.subnode_index.is_some() {
+            self.voxel_size
+        } else {
+            let node = &self.layers[link.layer_index][link.node_index];
+            node.size as f32 * self.voxel_size
+        };
+        gizmos.cuboid(
+            bevy_transform::prelude::Transform::from_translation(position)
+                .with_scale(Vec3::ONE * size),
+            color,
+        );
     }
 
     /// Draws cubes for each node in the octree.
