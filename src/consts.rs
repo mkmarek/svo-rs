@@ -271,6 +271,73 @@ pub const NEIGHBOR_POSITION_OFFSETS: [(i32, i32, i32); 6] = [
     (0, -1, 0),
 ];
 
+pub const SUBNODE_POSITIONS: [(u8, u8, u8); 64] = [
+    (0, 0, 0),
+    (1, 0, 0),
+    (0, 1, 0),
+    (1, 1, 0),
+    (0, 0, 1),
+    (1, 0, 1),
+    (0, 1, 1),
+    (1, 1, 1),
+    (2, 0, 0),
+    (3, 0, 0),
+    (2, 1, 0),
+    (3, 1, 0),
+    (2, 0, 1),
+    (3, 0, 1),
+    (2, 1, 1),
+    (3, 1, 1),
+    (0, 2, 0),
+    (1, 2, 0),
+    (0, 3, 0),
+    (1, 3, 0),
+    (0, 2, 1),
+    (1, 2, 1),
+    (0, 3, 1),
+    (1, 3, 1),
+    (2, 2, 0),
+    (3, 2, 0),
+    (2, 3, 0),
+    (3, 3, 0),
+    (2, 2, 1),
+    (3, 2, 1),
+    (2, 3, 1),
+    (3, 3, 1),
+    (0, 0, 2),
+    (1, 0, 2),
+    (0, 1, 2),
+    (1, 1, 2),
+    (0, 0, 3),
+    (1, 0, 3),
+    (0, 1, 3),
+    (1, 1, 3),
+    (2, 0, 2),
+    (3, 0, 2),
+    (2, 1, 2),
+    (3, 1, 2),
+    (2, 0, 3),
+    (3, 0, 3),
+    (2, 1, 3),
+    (3, 1, 3),
+    (0, 2, 2),
+    (1, 2, 2),
+    (0, 3, 2),
+    (1, 3, 2),
+    (0, 2, 3),
+    (1, 2, 3),
+    (0, 3, 3),
+    (1, 3, 3),
+    (2, 2, 2),
+    (3, 2, 2),
+    (2, 3, 2),
+    (3, 3, 2),
+    (2, 2, 3),
+    (3, 2, 3),
+    (2, 3, 3),
+    (3, 3, 3),
+];
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
@@ -614,5 +681,31 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(SUBNODE_NEIGHBORS, neighbors.as_slice());
+    }
+
+    #[test]
+    fn test_subnode_positions() {
+        let mut positions = Vec::new();
+
+        for x in 0..4_u8 {
+            for y in 0..4_u8 {
+                for z in 0..4_u8 {
+                    positions.push((x, y, z));
+                }
+            }
+        }
+
+        positions.sort_by(|a, b| {
+            let a = MortonCode::encode_xyz(a.0.into(), a.1.into(), a.2.into())
+                .as_u8()
+                .unwrap();
+            let b = MortonCode::encode_xyz(b.0.into(), b.1.into(), b.2.into())
+                .as_u8()
+                .unwrap();
+
+            a.cmp(&b)
+        });
+
+        assert_eq!(SUBNODE_POSITIONS, positions.as_slice());
     }
 }

@@ -1,5 +1,7 @@
+use bevy_math::UVec3;
+
 use crate::{
-    morton_code::MortonCode, point::ManhattanDistance, DistanceSquared, SparseVoxelOctree,
+    consts::SUBNODE_POSITIONS, point::ManhattanDistance, DistanceSquared, SparseVoxelOctree,
 };
 
 /// A link to a node in the sparse voxel octree.
@@ -83,16 +85,22 @@ impl SparseVoxelOctreeLink {
 
         let mut node_position = node.position * 4;
         if let Some(subnode_index) = self.subnode_index {
-            if let Ok(subnode_position) = MortonCode::from_u8(subnode_index).decode() {
-                node_position += subnode_position;
-            }
+            let subnode_position = UVec3::new(
+                SUBNODE_POSITIONS[subnode_index as usize].0.into(),
+                SUBNODE_POSITIONS[subnode_index as usize].1.into(),
+                SUBNODE_POSITIONS[subnode_index as usize].2.into(),
+            );
+            node_position += subnode_position;
         }
 
         let mut other_node_position = other_node.position * 4;
         if let Some(subnode_index) = other.subnode_index {
-            if let Ok(subnode_position) = MortonCode::from_u8(subnode_index).decode() {
-                other_node_position += subnode_position;
-            }
+            let subnode_position = UVec3::new(
+                SUBNODE_POSITIONS[subnode_index as usize].0.into(),
+                SUBNODE_POSITIONS[subnode_index as usize].1.into(),
+                SUBNODE_POSITIONS[subnode_index as usize].2.into(),
+            );
+            other_node_position += subnode_position;
         }
 
         node_position.manhattan_distance(&other_node_position)
@@ -128,16 +136,22 @@ impl SparseVoxelOctreeLink {
 
         let mut node_position = node.position * 4;
         if let Some(subnode_index) = self.subnode_index {
-            if let Ok(subnode_position) = MortonCode::from_u8(subnode_index).decode() {
-                node_position += subnode_position;
-            }
+            let subnode_position = UVec3::new(
+                SUBNODE_POSITIONS[subnode_index as usize].0.into(),
+                SUBNODE_POSITIONS[subnode_index as usize].1.into(),
+                SUBNODE_POSITIONS[subnode_index as usize].2.into(),
+            );
+            node_position += subnode_position;
         }
 
         let mut other_node_position = other_node.position * 4;
         if let Some(subnode_index) = other.subnode_index {
-            if let Ok(subnode_position) = MortonCode::from_u8(subnode_index).decode() {
-                other_node_position += subnode_position;
-            }
+            let subnode_position = UVec3::new(
+                SUBNODE_POSITIONS[subnode_index as usize].0.into(),
+                SUBNODE_POSITIONS[subnode_index as usize].1.into(),
+                SUBNODE_POSITIONS[subnode_index as usize].2.into(),
+            );
+            other_node_position += subnode_position;
         }
 
         (node_position).distance_squared(&other_node_position)

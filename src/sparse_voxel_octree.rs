@@ -7,7 +7,7 @@ use crate::{
     compound_node::CompoundNode,
     consts::{
         NEIGHBOR_CONNECTIONS, NEIGHBOR_POSITION_OFFSETS, NEIGHBOR_SUBNODES,
-        OFFSETS_IN_MORTON_CODE_ORDER, SUBNODE_NEIGHBORS,
+        OFFSETS_IN_MORTON_CODE_ORDER, SUBNODE_NEIGHBORS, SUBNODE_POSITIONS,
     },
     morton_code::MortonCode,
     sparse_voxel_octree_link::SparseVoxelOctreeLink,
@@ -495,22 +495,21 @@ impl SparseVoxelOctree {
             Vec3::new(node.size as f32, node.size as f32, node.size as f32) * self.voxel_size;
 
         if let Some(subnode) = link.subnode_index {
-            if let Ok(point) = MortonCode::from_u8(subnode).decode() {
-                #[allow(clippy::cast_precision_loss)]
-                let position = position
-                    + Vec3::new(
-                        point.x as f32 * self.voxel_size,
-                        point.y as f32 * self.voxel_size,
-                        point.z as f32 * self.voxel_size,
-                    )
-                    + Vec3::new(
-                        self.voxel_size / 2.0,
-                        self.voxel_size / 2.0,
-                        self.voxel_size / 2.0,
-                    );
+            let point = SUBNODE_POSITIONS[subnode as usize];
+            #[allow(clippy::cast_precision_loss)]
+            let position = position
+                + Vec3::new(
+                    point.0 as f32 * self.voxel_size,
+                    point.1 as f32 * self.voxel_size,
+                    point.2 as f32 * self.voxel_size,
+                )
+                + Vec3::new(
+                    self.voxel_size / 2.0,
+                    self.voxel_size / 2.0,
+                    self.voxel_size / 2.0,
+                );
 
-                return position;
-            }
+            return position;
         }
 
         position + scale_f32 / 2.0
