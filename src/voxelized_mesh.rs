@@ -93,10 +93,9 @@ impl VoxelizedMesh {
     ///
     /// ```
     /// use bevy::prelude::*;
-    /// use bevy_render::prelude::shape::UVSphere;
     /// use svo_rs::{VoxelizedMesh};
     ///
-    /// let sphere = Mesh::from(UVSphere::default());
+    /// let sphere = Sphere::new(1.0).mesh().uv(32, 18);
     /// let mesh = VoxelizedMesh::from_mesh(&sphere, Transform::IDENTITY.compute_matrix(), 1.0)
     ///     .expect("Failed to voxelize mesh");
     /// ```
@@ -184,7 +183,7 @@ impl VoxelizedMesh {
                     left_top_corner + voxel + half_size,
                 )
                 .with_scale(bevy_math::Vec3::ONE * self.voxel_size),
-                bevy_render::prelude::Color::RED,
+                bevy_color::Color::srgb(1.0, 0.0, 0.0),
             );
         }
     }

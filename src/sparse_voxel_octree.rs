@@ -346,7 +346,7 @@ impl SparseVoxelOctree {
             gizmos.line(
                 from,
                 self.node_position(successor),
-                bevy_render::prelude::Color::GREEN,
+                bevy_color::Color::srgb(0.0, 1.0, 0.0),
             );
         }
     }
@@ -521,7 +521,7 @@ impl SparseVoxelOctree {
         &self,
         gizmos: &mut bevy_gizmos::prelude::Gizmos,
         link: SparseVoxelOctreeLink,
-        color: bevy_render::prelude::Color,
+        color: bevy_color::Color,
     ) {
         let position = self.node_position(link);
         let size = if link.subnode_index.is_some() {
@@ -551,13 +551,13 @@ impl SparseVoxelOctree {
                     gizmos.cuboid(
                         bevy_transform::prelude::Transform::from_translation(position)
                             .with_scale(scale_f32),
-                        bevy_render::prelude::Color::RED,
+                        bevy_color::Color::srgb(1.0, 0.0, 0.0),
                     );
                 } else {
                     gizmos.cuboid(
                         bevy_transform::prelude::Transform::from_translation(position)
                             .with_scale(scale_f32),
-                        bevy_render::prelude::Color::YELLOW,
+                        bevy_color::Color::srgb(1.0, 1.0, 0.0),
                     );
                 }
 
@@ -580,7 +580,7 @@ impl SparseVoxelOctree {
                         gizmos.line(
                             position,
                             neighbor_position,
-                            bevy_render::prelude::Color::RED,
+                            bevy_color::Color::srgb(1.0, 0.0, 0.0),
                         );
                     }
                 }

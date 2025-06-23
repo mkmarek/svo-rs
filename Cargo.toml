@@ -9,20 +9,22 @@ homepage = "https://github.com/mkmarek/svo-rs"
 readme = "README.md"
 
 [dependencies]
-bevy_render = { version = "0.12.0", optional = true }
-bevy_gizmos = { version = "0.12.0", optional = true }
-bevy_transform = { version = "0.12.0", optional = true }
-bevy_math = { version = "0.12.0" }
+bevy_render = { version = "0.16.1", optional = true }
+bevy_gizmos = { version = "0.16.1", optional = true }
+bevy_transform = { version = "0.16.1", optional = true }
+bevy_color = { version = "0.16.1", optional = true }
+bevy_math = { version = "0.16.1" }
+bevy-inspector-egui = "0.31.0"
 
 [dev-dependencies]
-bevy = "0.12.0"
-pathfinding = "3.0.14"
-rand = "0.8.5"
-rand_distr = "0.4.3"
-criterion = { version = "0.5.1", features = ["html_reports"] }
+bevy = "0.16.1"
+pathfinding = "4.14.0"
+rand = "0.9.1"
+rand_distr = "0.5.1"
+criterion = { version = "0.6.0", features = ["html_reports"] }
 
 [features]
-bevy = ["bevy_render", "bevy_gizmos", "bevy_transform"]
+bevy = ["bevy_render", "bevy_gizmos", "bevy_transform", "bevy_color"]
 
 [[example]]
 name = "bevy_sphere"
