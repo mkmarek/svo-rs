@@ -1,7 +1,8 @@
 use std::collections::HashSet;
+use std::hint::black_box;
 
 use bevy_math::{IVec3, Vec3};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use svo_rs::{ManhattanDistance, SparseVoxelOctree, VoxelizedMesh};
 
 fn compute_path_hashset(points: &HashSet<IVec3>, voxel_size: f32, area_haf_size: f32) {
