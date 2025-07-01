@@ -14,10 +14,10 @@ bevy_gizmos = { version = "0.16.1", optional = true }
 bevy_transform = { version = "0.16.1", optional = true }
 bevy_color = { version = "0.16.1", optional = true }
 bevy_math = { version = "0.16.1" }
-bevy-inspector-egui = "0.31.0"
 
 [dev-dependencies]
 bevy = "0.16.1"
+bevy-inspector-egui = "0.31.0"
 pathfinding = "4.14.0"
 rand = "0.9.1"
 rand_distr = "0.5.1"
