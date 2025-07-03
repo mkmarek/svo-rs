@@ -1,11 +1,13 @@
 use bevy::prelude::*;
-use bevy_render::prelude::shape::UVSphere;
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use svo_rs::{SparseVoxelOctree, SparseVoxelOctreeBuilder, SparseVoxelOctreeLink, VoxelizedMesh};
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::DARK_GRAY))
+        .insert_resource(ClearColor(Color::srgb(0.2, 0.2, 0.2)))
         .add_plugins(DefaultPlugins)
+        .add_plugins(EguiPlugin { enable_multipass_for_primary_context: true })
+        .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -44,16 +46,14 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..Default::default()
-        },
+        Camera3d::default(),
+        Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         RotateCamera {
             distance: AREA_HALF_SIZE * 4.0,
         },
     ));
 
-    let sphere = Mesh::from(UVSphere::default());
+    let sphere = Sphere::new(1.0).mesh().uv(32, 18);
 
     let mut builder = SparseVoxelOctreeBuilder::new(VOXEL_SIZE);
 
@@ -72,36 +72,33 @@ fn setup(
 
     let sphere_handle = meshes.add(sphere);
 
-    commands.spawn(PbrBundle {
-        mesh: sphere_handle.clone(),
-        material: materials.add(Color::rgb(0.0, 1.0, 0.0).into()),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..Default::default()
-    });
+    commands.spawn((
+        Mesh3d(sphere_handle.clone()),
+        MeshMaterial3d(materials.add(Color::srgb(0.0, 1.0, 0.0))),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+    ));
 
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
+    commands.spawn((
+        PointLight {
             intensity: 1500.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
+        Transform::from_xyz(4.0, 8.0, 4.0),
+    ));
 
     commands
-        .spawn(PbrBundle {
-            mesh: sphere_handle.clone(),
-            material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-            transform: Transform::from_xyz(
+        .spawn((
+            Mesh3d(sphere_handle.clone()),
+            MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 0.0))),
+            Transform::from_xyz(
                 AREA_HALF_SIZE * 0.9,
                 AREA_HALF_SIZE * 0.9,
                 AREA_HALF_SIZE * 0.9,
             )
             .with_scale(Vec3::ONE * 0.1),
-            ..Default::default()
-        })
-        .insert(Agent);
+            Agent,
+        ));
 }
 
 #[must_use]
@@ -245,14 +242,14 @@ fn follow_path(
                 }
             }
 
-            path.progress += time.delta_seconds() * speed;
+            path.progress += time.delta_secs() * speed;
 
             for i in 0..path.path.len() - 1 {
-                gizmos.line(path.path[i], path.path[i + 1], Color::rgb(1.0, 1.0, 1.0));
+                gizmos.line(path.path[i], path.path[i + 1], Color::srgb(1.0, 1.0, 1.0));
             }
 
             for node in &path.visited_nodes {
-                svo.tree.draw_node_gizmo(&mut gizmos, *node, Color::GREEN);
+                svo.tree.draw_node_gizmo(&mut gizmos, *node, Color::srgb(0.0, 1.0, 0.0));
             }
             // gizmos.line(path.start, path.end, Color::rgb(1.0, 0.0, 0.0));
         }
@@ -268,14 +265,14 @@ fn rotate_camera_around_center(
     agents: Query<&Transform, (With<Agent>, Without<Camera>)>,
     mut camera: Query<(&mut Transform, &RotateCamera), With<Camera>>,
 ) {
-    let agent_transform = agents.get_single();
+    let agent_transform = agents.single();
     if agent_transform.is_err() {
         return;
     }
 
     let agent_transform = agent_transform.unwrap();
 
-    let camera = camera.get_single_mut();
+    let camera = camera.single_mut();
 
     if camera.is_err() {
         return;
